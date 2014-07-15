@@ -32,14 +32,15 @@ extern "C"
  * uses an additional buffer to reduce alloctions
  * is not threadsafe
  * 
- * to be used internally
+ * @warning internal file - not installed
  */
 
 #include <fftw3.h> 
-#include "pden.h"
+#include "pden.in.h"
 
 #ifdef DOUBLE
 #define FFTW_plan  fftw_plan             
+#define FFTW_destroy_plan fftw_destroy_plan
 #define dft_r2c    fftw_plan_dft_r2c_3d  
 #define dft_c2r    fftw_plan_dft_c2r_3d  
 #define ex_dft_r2c fftw_execute_dft_r2c  
@@ -47,6 +48,7 @@ extern "C"
 #define complx     fftw_complex
 #else              
 #define FFTW_plan  fftwf_plan            
+#define FFTW_destroy_plan fftwf_destroy_plan
 #define dft_r2c    fftwf_plan_dft_r2c_3d 
 #define dft_c2r    fftwf_plan_dft_c2r_3d 
 #define ex_dft_r2c fftwf_execute_dft_r2c 
@@ -81,7 +83,7 @@ struct Split2FFT_struct {
  * @param optimize optimization flag for FFTW (0 = no, 1 = yes) 
  * @return a reference of a split2fft object
  */
-Split2FFT_t * split2FFTNew ( PDen_t * map, int optimize);
+Split2FFT_t * split2FFTNew ( PDen_t * map, const int optimize);
 
 /**
  * @brief split2fft destructor
@@ -103,7 +105,7 @@ Split2FFT_t * split2FFTDelete ( Split2FFT_t * this );
   * @return 0
   * @deprecated this method is deprecated - use split2FFTExecuteN
   */
-int split2FFTExecute ( Split2FFT_t * this, PDen_t *map, int direction);
+int split2FFTExecute ( Split2FFT_t * this, PDen_t *map, const  int direction);
 
 /**
   * @brief execute the fft ()

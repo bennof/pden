@@ -24,6 +24,7 @@
  * @file pden_sfrefine.h
  * @author Benjamin Falkner
  * @brief File containing conjugated gradient methods
+ * @warning internal file - not installed
  *
  * This Header is only to implement new Structur Factor Optimizations
  * - typically least squares is used in this library
@@ -31,7 +32,7 @@
  * - as an example see Babinet implementation
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "types.h"
 #include "mathtools.h"
@@ -55,7 +56,7 @@ typedef real (*SFfunc_t) (real s2, real calc, real mask, real x0[]);//deprecated
  * @param param0 array of parameters 
  * @return least square sum
  */
-typedef real (*SFValueFunc_t) (PDen_t *X[], real param0[]);
+typedef real (*SFValueFunc_t) (const PDen_t *X[], const real param0[]);
 
 /**
  * @brief least square funtion gradient
@@ -63,7 +64,7 @@ typedef real (*SFValueFunc_t) (PDen_t *X[], real param0[]);
  * @param param0 array of parameters 
  * @param grad the calculated gradient is written into this array
  */
-typedef void (*SFGradFunc_t)  (PDen_t *X[], real param0[],real grad[]);
+typedef void (*SFGradFunc_t)  (const PDen_t *X[], const real param0[],real grad[]);
 
 
 /**
@@ -77,6 +78,6 @@ typedef void (*SFGradFunc_t)  (PDen_t *X[], real param0[],real grad[]);
  * @param steps max number of steps to be performed
  * @return 0
  */
-int CGRefine (PDen_t *X[], real param0[], SFValueFunc_t func, SFGradFunc_t gradfunc, size_t npar, real prec, size_t steps);
+int CGRefine (const PDen_t *X[], real param0[], SFValueFunc_t func, SFGradFunc_t gradfunc, const size_t npar, const real prec, const size_t steps);
 
 #endif

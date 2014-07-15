@@ -18,7 +18,7 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
@@ -69,7 +69,7 @@ static real pDenPengKernel(real r,int type, real sigma)
 	 */
 
 	register real v, h1, h2, h3, h4, h0 ;
-	real sf[4], sf_a[4];
+	real sf[5], sf_a[5];
 
 	h0 = -9.8696 * r;
 	

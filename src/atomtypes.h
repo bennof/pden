@@ -21,6 +21,13 @@
 #ifndef __ATOMTYPES_H
 #define __ATOMTYPES_H
 
+/**
+ * @file atomtypes.h
+ * @author Benjamin Falkner
+ * @brief File containing atom types 
+ * @warning internal file - not installed
+ */
+
 static int ATOM_TYPE_ANY  =  0; 
 static int ATOM_TYPE_H    =  1; 
 static int ATOM_TYPE_C    =  2; 

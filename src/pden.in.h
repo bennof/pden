@@ -27,18 +27,31 @@ extern "C" {
 #endif
 
 /**
- * @file pden.h
+ * @file pden.in.h
  * @author Benjamin Falkner
  * @brief File containing all functions that should be directly used from this library
+ * This header will be installed as pden.h (single precision) or pdenf.h (double precision). 
+ * Depending on selected precision real will be replaced by real or double 
  */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-
+/**
+ * @brief helps to construct 3 dimensional structures
+ */
 #define VEC3(value) struct{value x; value y; value z;}
 
+/**
+  *  @brief bitflag to signal that a density is in phase space
+  *  use as bitflags because the other bits are reserved for future usage
+  */
 #define PDEN_MODE_PHASE_SPACE 0x1
+/**
+  *  @brief bitflag to signal that a density is in real space
+  *  use as bitflags because the other bits are reserved for future usage
+  */
 #define PDEN_MODE_REAL_SPACE  0x0
 
 #define PDEN_RENDER_NM_COORDS 1
@@ -54,7 +67,7 @@ typedef struct Split2FFT_struct Split2FFT_t;
   * structure containing all informations about an protein density map
   */
 typedef struct PDen_struct {
-	int           mode;    /**< Mode flag only for real space / phase space used */
+	int           mode;    /**< Mode bitflag only for real space / phase space used. (other bits are reserved for future usage) */
 	size_t	      n;       /**< number of records of the density in real space */
 	VEC3(size_t)  size;    /**< grid size */
 	VEC3(real)    apix;    /**< Angstrom per pixel*/
@@ -305,6 +318,33 @@ PDen_t * pDenSubFS (PDen_t * result, PDen_t * a, PDen_t * b );
 
 
 /**
+ * @brief shift density inside the grid (fourier based)
+ */
+PDen_t * pDenShiftInGrid(PDen_t * result, PDen_t * a,real dx,real dy, real dz);
+
+/**
+ * @brief apply a Gaussian filter
+ */
+PDen_t * pDenGaussFilter(PDen_t * result, PDen_t * a,real sigma);
+
+/**
+ * @brief apply Laplace filter 
+ */
+PDen_t * pDenLaplaceFilter(PDen_t * result, PDen_t * a,real sigma);
+
+/**
+ * @brief apply ramp filter 
+ */
+PDen_t * pDenRampFilter(PDen_t * result, PDen_t * a,real sigma);
+
+
+
+
+
+
+
+
+/**
  * @brief calculate the power spectrum 
  */
 int      pDenCalcPS(PDen_t * input,real *data, size_t n);
@@ -355,12 +395,12 @@ int pDenAddRangedGradient(PDen_t * this, PDen_t *ref, real *x, size_t natoms,  r
  * T. D. Fenn, M. J. Schnieders and A. T. Brunger
  * Acta Cryst. (2010). D66, 1024–1031
  */
-int      pDenRefineSF_Babinet (PDen_t * model, PDen_t *calc, PDen_t *mask, real *k_glob, real * B_glob, real * k_solv, real * B_solv, real prec, size_t steps);
+int      pDenRefineSF_Babinet (PDen_t * model, PDen_t *calc, PDen_t *mask, real *k_glob, real * B_glob, real * k_solv, real * B_solv, const real prec, const size_t steps);
 
 /**
  * apply babinet's principle to a map (mask can be the same as input)
  */
-PDen_t * pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, real k_glob, real B_glob, real k_solv, real B_solv);
+PDen_t * pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, const real k_glob, const real B_glob, const real k_solv, const real B_solv);
 
 
 #ifdef __cplusplus

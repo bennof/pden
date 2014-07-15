@@ -18,7 +18,7 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 
 #define BUFFERSIZE 120
@@ -28,7 +28,7 @@ int pDenReadXPLOR(PDen_t * this, const char * filename, int mode)
 	FILE * f;
 	char buffer[BUFFERSIZE];
 	int NA, AMIN, AMAX, NB, BMIN, BMAX, NC, CMIN, CMAX;
-	double a, b, c, alpha, beta, gamma; 
+	real a, b, c, alpha, beta, gamma; 
 	size_t x,y,z;
 	real *r, *p, h;
 
@@ -53,7 +53,11 @@ int pDenReadXPLOR(PDen_t * this, const char * filename, int mode)
 
 	if ( !fscanf(f,"%i %i %i %i %i %i %i %i %i\n",&NA, &AMIN, &AMAX, &NB, &BMIN, &BMAX, &NC, &CMIN, &CMAX) ) // 6 - NA, AMIN, AMAX, NB, BMIN, BMAX, NC, CMIN, CMAX 
 		return 2;
+	#ifdef DOUBLE
 	if ( !fscanf(f,"%lf %lf %lf %lf %lf %lf\n",&a, &b, &c, &alpha, &beta, &gamma ) ) // 7 - a, b, c, alpha, beta, gamma
+	#else
+	if ( !fscanf(f,"%f %f %f %f %f %f\n",&a, &b, &c, &alpha, &beta, &gamma ) ) // 7 - a, b, c, alpha, beta, gamma
+	#endif
 		return 2;
 
 
@@ -105,7 +109,11 @@ int pDenReadXPLOR(PDen_t * this, const char * filename, int mode)
 				return 3;
 			}
 			for(x=0;x<this->size.x;x++) { // X - Page record
+				#ifdef DOUBLE
 				fscanf(f, "%lf", &h);
+				#else
+				fscanf(f, "%f", &h);
+				#endif
 				(*p++) = h;
 			}
 		}

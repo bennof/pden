@@ -18,7 +18,7 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
@@ -45,6 +45,8 @@ int pDenGetGradient(PDen_t * this,PDen_t *ref, real *grad,real *x, size_t natoms
 	d  = this->data;
 	dr = ref->data;
 
+
+	
 	for(q=0;q<natoms;q++) {
 		s.x = 0.;
 		s.y = 0.;
@@ -354,27 +356,35 @@ int pDenGetRangedGradient(PDen_t * this,PDen_t * ref,real *grad,real *x, size_t 
 	return 0;
 }
 
-int pDenAddGradient(PDen_t * this, PDen_t * ref, real *x, size_t natoms, real weight){
+int pDenAddGradient(PDen_t * this, PDen_t * ref, real *x, size_t natoms, real weight)
+{
+	const real * d, * dr;
+
+	debug("add gradient at atomic position to atom");
+
+        const size_t dim2 = this->size.x;
+	const size_t dim3 = this->size.y*dim2;
+
+	d  = (const real*)this->data;
+	dr = (const real*)ref->data;
+
+	#ifdef __GRADIENT_C_OPENMP 
+	#pragma omp parallel
+	#endif
+	{
 	size_t q;
-	size_t dim3, dim2;
+	real r;
 
 	vec3 dx; //gradients
 	vec3 p;   //position
 	vec3 h;   //h factor
 	vec3 s;   //s factor
-
-
-	real r, * d, * dr;
-
 	uvec3 gridid;
-	debug("add gradient at atomic position to atom");
 
-        dim2 = this->size.x;
-	dim3 = this->size.y*dim2;
 
-	d  = this->data;
-	dr = ref->data;
-
+	#ifdef __GRADIENT_C_OPENMP 
+	#pragma omp for schedule(static)  
+	#endif
 	for(q=0;q<natoms;q++) {
 		s.x = 0.;
 		s.y = 0.;
@@ -543,6 +553,7 @@ int pDenAddGradient(PDen_t * this, PDen_t * ref, real *x, size_t natoms, real we
 		x[ 3 * q + 2 ] += dx.z;
 		#endif
 	}
+	} //OMP PARALLEL END
 	return 0;
 }
 
@@ -684,5 +695,6 @@ int pDenAddRangedGradient(PDen_t * this,PDen_t * ref,real *x, size_t natoms,  re
 		x[ 3 * q + 2 ] += dx.z;
 		#endif
 	}
+
 	return 0;
 }

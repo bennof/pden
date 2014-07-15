@@ -18,11 +18,12 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
 #include "split2fft.h"  
+
 
 int pDenFFT(PDen_t * this,int direction)
 {
@@ -37,12 +38,14 @@ int pDenFFTNormal(PDen_t * this,int direction)
 {
 	debug("Normalized FFT (%s)",(direction>0)?"forward":"backward");
 	if(!this->fft) 
-		this->fft=split2FFTNew(this,1);
+		this->fft=split2FFTNew(this,0);
 	return split2FFTExecuteN(this->fft,this,direction);
 }
 
 int pDenSetupFFT(PDen_t * this,int optimize)
-{
+{	
+	if (this->fft)
+		split2FFTDelete(this->fft);	
 	this->fft=split2FFTNew(this,optimize);
 	return 0;
 }
@@ -106,13 +109,11 @@ int pDenGetSizeSplitCV     (PDen_t * input, real lb1,real ub1,real lb2,real ub2,
 
 PDen_t * pDenSplitCV       (PDen_t * result, PDen_t * free, PDen_t * input,real lb1,real ub1,real lb2,real ub2)
 {
-	size_t  k,j,i; 
-	size_t  ni,nj,nk;
-	ssize_t u,v;
-	real    *d,*f,*r,h;
+	//calculate data dimensions
+  	const size_t nk = input->size.z;
+  	const size_t nj = input->size.y;
+  	const size_t ni = ( input->size.x / 2 + 1 );
 	real 	modx,mody,modz;
-
-	pDenFFTNormal(input,1);
 
 	modx = input->apix.x*input->size.x;
 	mody = input->apix.y*input->size.y;
@@ -122,69 +123,83 @@ PDen_t * pDenSplitCV       (PDen_t * result, PDen_t * free, PDen_t * input,real 
 	mody = 1./(mody*mody);
 	modz = 1./(modz*modz);
 
+
+	pDenFFTNormal(input,1);
+
 	//calculating inverse square values
  	lb1=1./(lb1*lb1);
 	lb2=1./(lb2*lb2);
   	ub1=1./(ub1*ub1);
   	ub2=1./(ub2*ub2);
 
-	debug("scaling: %lf %lf %lf",modx,mody,modz);
 	debug("Bounds: %lf %lf %lf %lf",lb1,ub1,lb2,ub2);
 
+	#ifdef __FFT_C_OPENMP 
+	#pragma omp parallel 
+	#endif
+	{
+	size_t  k,j,i,p; 
+	ssize_t u,v;
+	const cplx    *d;
 
-	//calculate data dimensions
-  	nk = input->size.z;
-  	nj = input->size.y;
-  	ni = ( input->size.x / 2 + 1 );
+	cplx    *f,*r;
+	real    h;
 
-	f = free->data;
-	d = input->data;
-	r = result->data;
+	f = (cplx*)free->data;
+	d = (const cplx*)input->data;
+	r = (cplx*)result->data;
 
+	#ifdef __FFT_C_OPENMP
+	#pragma omp for schedule(static)
+	#endif
   	for(k=0;k<nk;k++){
+        	u = dft_c(k,nk);
   	  	for(j=0;j<nj;j++){
+        		v = dft_c(j,nj);
       			for(i=0;i<ni;i++){
         			//radius
-        			u = dft_c(k,nk);
-        			v = dft_c(j,nj);
-
         			h = (double)(i*i)*(modx)
         			 	+(double)(v*v)*(mody)
          				+(double)(u*u)*(modz);
 
+
+				// array position
+				p = (k * nj + j) * ni + i;
+
 				if ((h <= ub2) && (h >= lb2)){ //if free set
-					(*f++) = (*d++);
-					(*f++) = (*d++);
-					(*r++) = 0.;
-					(*r++) = 0.;
+					f[p].r = d[p].r;
+					f[p].i = d[p].i;
+					r[p].r = 0.;
+					r[p].i = 0.;
 				}
 				else if((h <ub1)  && (h >= lb1)){ //if in use set 
-					(*f++) = 0.;
-					(*f++) = 0.;
-					(*r++) = (*d++);
-					(*r++) = (*d++);
+					r[p].r = d[p].r;
+					r[p].i = d[p].i;
+					f[p].r = 0.;
+					f[p].i = 0.;
 				}
 				else{  // not used (0.0)
-					(*f++) = 0.;
-					(*f++) = 0.;
-					(*r++) = 0.;
-					(*r++) = 0.;
-					d+=2; 
+					r[p].r = 0.;
+					r[p].i = 0.;
+					f[p].r = 0.;
+					f[p].i = 0.;
 				}
 			}
 		}
 	}
+	} //OMP PARALLEL END	
 	free->mode   |= PDEN_MODE_PHASE_SPACE;
 	result->mode |= PDEN_MODE_PHASE_SPACE;
 	return result;
 }
+
 
 real pDenRFactor(PDen_t * a, PDen_t * b)
 {
 	size_t  k;
 	size_t  ni,nj,nk,n;
 	real pow1,pow2,r,c,scale, R, d;
-	real *m1,*m2;
+	const cplx *m1,*m2;
 
 	debug("compute R factor");
 
@@ -199,44 +214,71 @@ real pDenRFactor(PDen_t * a, PDen_t * b)
 	n=nk*nj*ni;
 
 	//scaling factor
-	m1 = a->data;
-	m2 = b->data;
+	m1 = (const cplx*)a->data;
+	m2 = (const cplx*)b->data;
 	pow1=0.;
 	pow2=0.;
+
+	R=0.;
+	d=0.;
+
+
+	#ifdef __FFT_C_OPENMP 
+	#pragma omp parallel private(k,r,c) 
+	#endif
+	{
+	real pow1_=0., pow2_=0.;
+	real R_=0., d_=0.;
+	#ifdef __FFT_C_OPENMP
+	#pragma omp for schedule(static)
+	#endif
   	for(k=0;k<n;k++){
-		r = (*m1++);
-		c = (*m1++);
+		r = m1[k].r;
+		c = m1[k].i;
 		r = ( r*r / c*c );
 		if ( r > 0. ){
 			r = sqrt ( r );
-			pow1 += r;
+			pow1_ += r;
 		}
-		r = (*m2++);
-		c = (*m2++);
+		r = m2[k].r;
+		c = m2[k].i;
 		r = ( r*r / c*c );
 		if ( r > 0. ){
 			r = sqrt ( r );
-			pow2 += r;
+			pow2_ += r;
 		}
 	}
+	#pragma omp atomic
+	pow1 += pow1_;
+	#pragma omp atomic
+	pow2 += pow2_;
+
+	#pragma omp barrier
 	scale = pow1 / pow2 ;
 
 	// compute R Value
-	R = d = 0.0;
-	m1 = a->data;
-	m2 = b->data;
+	#ifdef __FFT_C_OPENMP
+	#pragma omp for schedule(static)
+	#endif
   	for(k=0;k<nk;k++){
-		r = (*m1++);
-		c = (*m1++);
+		r = m1[k].r;
+		c = m1[k].i;
 		r = ( r*r / c*c );
-		pow1 = (r>0.)? sqrt ( r ) : 0.;
-		r = (*m2++);
-		c = (*m2++);
+		pow1_ = (r>0.)? sqrt ( r ) : 0.;
+		r = m2[k].r;
+		c = m2[k].i;
 		r = ( r*r / c*c );
-		pow2 = (r>0.)? sqrt ( r ) : 0.;
-		R += fabs ( pow1 - pow2 * scale );
-		d += pow1;		
+		pow2_ = (r>0.)? sqrt ( r ) : 0.;
+		R_ += fabs ( pow1_ - pow2_ * scale );
+		d_ += pow1_;		
 	}
+
+	#pragma omp atomic 
+	R += R_;
+	#pragma omp atomic 
+	d += d_;
+
+	} //OMP PARALLEL END
 	
 
 	return R/d;
@@ -262,3 +304,188 @@ binop( + )
 PDen_t * pDenSubFS (PDen_t * result, PDen_t * a, PDen_t * b )
 binop( - )
 
+
+
+PDen_t * pDenShiftInGrid(PDen_t * result, PDen_t * a,real dx,real dy, real dz)
+{
+        real *d , *r; 
+        size_t i,j,k,xx,yy,zz,p;
+        double re[6],im[6],h;
+
+	dx /= a->apix.x;
+	dy /= a->apix.y;
+	dz /= a->apix.z;
+
+        re[0] = cos(2.0f*PI/a->size.x*dx);
+        im[0] = -1.0f*sin(2.0f*PI/a->size.x*dx);
+
+        re[1] = cos(2.0f*PI/a->size.y*dy);
+        im[1] = -1.0f*sin(2.0f*PI/a->size.y*dy);
+
+        re[2] = cos(-1.0f*PI*dy);
+        im[2] = -1.0f*sin(-1.0f*PI*dy);
+
+        re[5] = cos(2.0f*PI/a->size.z*dz);
+        im[5] = -1.0f*sin(2.0f*PI/a->size.z*dz);
+
+        re[4] = cos(-1.0f*PI*dz);
+        im[4] = -1.0f*sin(-1.0f*PI*dz);
+
+        re[4] = cos(-1.0f*PI*dz);
+        im[4] = -1.0f*sin(-1.0f*PI*dz);
+        xx=a->size.x/2+1;
+
+	// test for phase space
+	pDenFFTNormal(a,1);
+
+        d = a->data;
+	r = result->data;
+        for(k=0;k<a->size.z;k++){
+        	zz=(k+a->size.z/2)%a->size.z;
+        	re[2]=re[4];
+        	im[2]=im[4];
+
+        	for(j=0;j<a->size.y;j++){
+        		yy=(j+a->size.y/2)%a->size.y;
+        		re[3]=re[2];
+        		im[3]=im[2];
+        		for(i=0;i<xx;i++){
+        		        p=2*(i+yy*xx+zz*a->size.x*xx);
+
+        		        h=d[p];
+        		        r[p  ] = h*re[3]-d[p+1]*im[3];
+        		        r[p+1] = d[p+1]*re[3]+h*im[3];
+
+        		        h=re[3];
+        		        re[3] = h*re[0]-im[3]*im[0];
+        		        im[3] = h*im[0]+im[3]*re[0];
+        		}   
+        		h=re[2];
+        		re[2] = h*re[1]-im[2]*im[1];
+        		im[2] = h*im[1]+im[2]*re[1];
+        	}   
+        	h=re[4];
+        	re[4] = h*re[5]-im[4]*im[5];
+        	im[4] = h*im[5]+im[4]*re[5];
+        }   
+	result->mode |=PDEN_MODE_PHASE_SPACE;
+	return result;
+}
+
+PDen_t * pDenGaussFilter(PDen_t * result, PDen_t * a,real sigma)
+{
+
+        size_t i,j,k,p;
+	size_t  ni,nj,nk;
+        ssize_t u,v;
+        const cplx *m;
+	cplx *r;
+	real h;
+        const real k0 = 1.0/(a->apix.x*a->apix.x*a->size.x*a->size.x);
+        const real k1 = 1.0/(a->apix.y*a->apix.y*a->size.y*a->size.y);
+        const real k2 = 1.0/(a->apix.z*a->apix.z*a->size.z*a->size.z);
+        const real C = sqrt(2*PI)*sigma;
+        const real c = -2.0*PI*PI*sigma*sigma;
+
+	// calculate data dimensions
+	nk = a->size.z;
+	nj = a->size.y;
+	ni = ( a->size.x / 2 + 1 );
+
+	// test for phase space
+	pDenFFTNormal(a,1);
+
+        m = (const cplx*)a->data;
+        r = (cplx*)result->data;
+        for(k=0;k<nk;k++){
+                v=dft_c(k,nk);
+                for(j=0;j<nj;j++){
+                        u=dft_c(j,nj);
+                        for(i=0;i<ni;i++){
+                                h=(real)(i*i)*k0+(real)(u*u)*k1+(real)(v*v)*k2;
+				// array position
+				p = (k * nj + j) * ni + i;
+
+				h = C*exp(c*h);
+
+                                r[p].r = m[p].r*h;
+                                r[p].i = m[p].i*h;
+                        }
+                }
+        }
+	result->mode |=PDEN_MODE_PHASE_SPACE;
+	return result;
+}
+
+PDen_t * pDenLaplaceFilter(PDen_t * result, PDen_t * a,real sigma)
+{
+        size_t i,j,k,p;
+	size_t  ni,nj,nk;
+        ssize_t u,v;
+        real h; 
+	const cplx *m;
+	cplx *r;
+        const real k0 = 1.0/(a->apix.x*a->apix.x*a->size.x*a->size.x);
+        const real k1 = 1.0/(a->apix.y*a->apix.y*a->size.y*a->size.y);
+        const real k2 = 1.0/(a->apix.z*a->apix.z*a->size.z*a->size.z);
+	// calculate data dimensions
+	nk = a->size.z;
+	nj = a->size.y;
+	ni = ( a->size.x / 2 + 1 );
+
+	// test for phase space
+	pDenFFTNormal(a,1);
+
+        m = (const cplx*)a->data;
+        r = (cplx*)result->data;
+
+	for(k=0;k<nk;k++){
+        	v=dft_c(k,nk);
+        	for(j=0;j<nj;j++){
+        		u=dft_c(j,nj);
+        		for(i=0;i<ni;i++){
+        			h=((real)(i*i)*k0+(real)(u*u)*k1+(real)(v*v)*k2);
+				// array position
+				p = (k * nj + j) * ni + i;
+
+                                r[p].r = m[p].r*h;
+                                r[p].i = m[p].i*h;
+        		}
+        	}
+        }
+
+	result->mode |=PDEN_MODE_PHASE_SPACE;
+	return result;
+}
+
+PDen_t * pDenRampFilter(PDen_t * result, PDen_t * a,real sigma)
+{
+        size_t i,j,k;
+        ssize_t u,v;
+        real h, *m, *r;
+        const real k0 = 1.0/(a->apix.x*a->apix.x*a->size.x*a->size.x);
+        const real k1 = 1.0/(a->apix.y*a->apix.y*a->size.y*a->size.y);
+        const real k2 = 1.0/(a->apix.z*a->apix.z*a->size.z*a->size.z);
+
+	// test for phase space
+	pDenFFTNormal(a,1);
+
+        m = a->data;
+        r = result->data;
+
+	for(k=0;k<a->size.z;k++){
+        	v=dft_c(k,a->size.z);
+        	for(j=0;j<a->size.y;j++){
+        	        u=dft_c(j,a->size.y);
+        	        for(i=0;i<(a->size.x/2+1);i++){
+        	                h=(real)(i*i)*k0+(real)(u*u)*k1+(real)(v*v)*k2;
+        	                h=(h==0.0)?0.0:h*isqrt_(h);
+        	                (*r++) *= h*(*m++);
+        	                (*r++) *= h*(*m++);
+        	        }
+        	}
+        }
+
+	result->mode |=PDEN_MODE_PHASE_SPACE;
+	return result;
+}

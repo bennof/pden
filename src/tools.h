@@ -21,6 +21,12 @@
 #ifndef __tools_h
 #define __tools_h
 
+/**
+ * @file tools.h
+ * @author Benjamin Falkner
+ * @brief File containing defines to simplyfy  usage 
+ * @warning internal file - not installed
+ */
 
 #ifdef DEBUG 
 #define VERBOSE 1
@@ -55,7 +61,6 @@ fprintf(stdout,"#PDEN> ");\
 fprintf(stdout, __VA_ARGS__ );\
 fprintf(stdout,"\n");\
 }
-
 
 #ifdef VERBOSE
 #define say( ... ) \
@@ -196,5 +201,13 @@ exit(0);\
 
 
 
+///OPENMP
 
+#ifdef _OPENMP
+#define __BABINET_C_OPENMP
+#define __GRADIENT_C_OPENMP
+#define __FFT_C_OPENMP
 #endif
+
+#endif //ENDHEADER
+

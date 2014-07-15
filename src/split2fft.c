@@ -18,17 +18,19 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "tools.h"
 #include "split2fft.h"
 #include "mathtools.h"
 
 
+// dublicate a exsiting split2fft used in new function
 static Split2FFT_t * dub(Split2FFT_t * d){
 	d->cinst++;
 	return d;
 }
 
 
-Split2FFT_t * split2FFTNew ( PDen_t * map, int optimize){
+Split2FFT_t * split2FFTNew ( PDen_t * map, const int optimize){
 	if(map->fft) return dub(map->fft);
 	else{
 		Split2FFT_t * r;
@@ -43,16 +45,20 @@ Split2FFT_t * split2FFTNew ( PDen_t * map, int optimize){
 		r->switching = ( real * ) malloc ( ( map->size.x + 2 ) * map->size.y * map->size.z * sizeof( real ) );
 
 		if(optimize){
+			real * hh = (real*)malloc(( map->size.x + 2 ) * map->size.y * map->size.z * sizeof( real ));
+			info("Optimizing FFT");
+			
 			r->planf = dft_r2c(map->size.z,map->size.y,map->size.x,
-					map->data,(fftw_complex*)r->switching,FFTW_MEASURE);
+					hh,(complx*)r->switching,FFTW_PATIENT);
 			r->planb = dft_c2r(map->size.z,map->size.y,map->size.x,
-					(complx*)r->switching,map->data,FFTW_MEASURE);
+					(complx*)hh,r->switching,FFTW_PATIENT);
+			free(hh);
 		}
 		else {
 			r->planf = dft_r2c(map->size.z,map->size.y,map->size.x,
-					map->data,(fftw_complex*)r->switching,FFTW_ESTIMATE);
+					map->data,(complx*)r->switching,FFTW_ESTIMATE);
 			r->planb = dft_c2r(map->size.z,map->size.y,map->size.x,
-					(complx*)r->switching,map->data,FFTW_ESTIMATE);
+					(complx*)map->data,r->switching,FFTW_ESTIMATE);
 		}
 		return r;
 	}
@@ -63,15 +69,15 @@ Split2FFT_t * split2FFTDelete ( Split2FFT_t * this )
 {
 	this->cinst--;
 	if(!this->cinst){
-		fftw_destroy_plan(this->planf);
-		fftw_destroy_plan(this->planb);
+		FFTW_destroy_plan(this->planf);
+		FFTW_destroy_plan(this->planb);
 		free(this->switching);	
 		free(this);
 	}
 	return 0;
 }
 
-int split2FFTExecute(Split2FFT_t * this, PDen_t *map, int direction)
+int split2FFTExecute(Split2FFT_t * this, PDen_t *map, const int direction)
 {
 	size_t i;
 	real *h,N;
@@ -104,7 +110,7 @@ int split2FFTExecute(Split2FFT_t * this, PDen_t *map, int direction)
 	return 0;
 }
 
-int split2FFTExecuteN(Split2FFT_t * this, PDen_t *map, int direction)
+int split2FFTExecuteN(Split2FFT_t * this, PDen_t *map, const int direction)
 {
 	size_t i,n;
 	real *h,N;
@@ -118,6 +124,7 @@ int split2FFTExecuteN(Split2FFT_t * this, PDen_t *map, int direction)
 			map->mode |= PDEN_MODE_PHASE_SPACE;
 			N = 1. / sqrt( ( real ) map->n);
 			n = (map->size.x+2)*map->size.y*map->size.z;
+			debug("N=%lf n=%lu",N,n);
 			for(i=0;i<n;i++)
 				map->data[i]*=N;
 		}
@@ -132,6 +139,8 @@ int split2FFTExecuteN(Split2FFT_t * this, PDen_t *map, int direction)
 			this->switching = h;
 			map->mode &= ~PDEN_MODE_PHASE_SPACE;
 			N = 1. / sqrt( ( real ) map->n);
+			n = (map->size.x+2)*map->size.y*map->size.z;
+			debug("N=%lf n=%lu",N,n);
 			for(i=0;i<map->n;i++)
 				map->data[i]*=N;
 		}

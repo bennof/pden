@@ -2,72 +2,6 @@
 set -ex
 
 
-lib_src="\
-fft.c \
-gradient.c \
-pden.c \
-pden_math.c \
-pden_mrc.c \
-pden_xplor.c \
-powerspectra.c \
-render.c \
-sfrefine.c \
-babinet.c \
-split2fft.c"
-
-bin_src=" \
-pdcalcps.c \
-pdrefinesf.c \
-pdapplysf.c \
-pdnormalize.c"
-
-
-fbuild () {
-	printf "Fast build ...\n"
-	for i in src/*.c; do 
-		gcc -Wall -std=c99 -O2  -c -pedantic -DVERBOE=1 -DDOUBLE=double -Dreal=double -o ${i%*.c}.o $i  || return 1; 
-	done
-
-	for i in $lib_src
-	do
-		lib_obj="$lib_obj src/${i%*.c}.o"
-	done
-	ar crs libpden.a $lib_obj
-
-	for i in $bin_src
-	do
-		gcc -Wall -O2 -o ${i%*.c} src/${i%*.c}.o libpden.a -lfftw3 -lm
-	done
-}
-
-
-dbuild () {
-	printf "Debug build ...\n"
-	for i in src/*.c; do 
-		gcc -Wall -std=c99 -g  -c -pedantic -DVERBOSE=1 -DDOUBLE=double -Dreal=double -o ${i%*.c}.o $i  || return 1; 
-	done
-
-	for i in $lib_src
-	do
-		lib_obj="$lib_obj src/${i%*.c}.o"
-	done
-	ar crs libpden.a $lib_obj
-
-	for i in $bin_src
-	do
-		gcc -Wall -g -o ${i%*.c} src/${i%*.c}.o libpden.a -lfftw3 -lm
-	done
-}
-
-clean_build () {
-	rm src/*.o
-	rm libpden.a
-	for i in $bin_src
-	do
-		rm ${i%*.c}
-	done
-}
-
 init () {
 	printf "Init ...\n"
 	autoscan
@@ -82,26 +16,84 @@ autotools () {
 }
 
 autogen () {
-	autoreconf --force --install -m
+	autoreconf --force --install 
 }
 
+debug () {
+	autogen;
+	./configure  --enable-debug $@
+	make
+}
+
+single () {
+	autogen;
+	./configure --enable-single $@
+	make
+}
 
 default () {
 	autogen;
-	cp src/libpden.a .
+	./configure $@
+	make
 }
+
+doxygen () {
+	echo "In the country of the blind the one-eyed man is king."
+	cat <<EOF > doxygen.conf
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = "PDEN - Protein Density"
+PROJECT_NUMBER         =
+PROJECT_BRIEF          =
+PROJECT_LOGO           =
+OUTPUT_DIRECTORY       = doc
+OUTPUT_LANGUAGE        = English
+OPTIMIZE_OUTPUT_FOR_C  = YES
+INPUT                  = src
+INPUT_ENCODING         = UTF-8
+FILE_PATTERNS          = *.c *.h
+GENERATE_LATEX         = NO
+EOF
+	doxygen doxygen.conf
+}
+
 
 clean () {
+	make clean
 	rm -rf config.log config.status configure depcomp missing install-sh autom4te.cache compile Makefile.in aclocal.m4 Makefile src/Makefile src/Makefile.in src/stamp-h1 src/config.h src/config.h.in src/config.h.in~ src/.deps 
-	clean_build
+	rm -rf doc doxygen.conf
+
 }
 
+help () {
+set +x
+echo "HELP:" 
+echo "" 
+echo "USAGE: autogen.sh <mode> <args>" 
+echo "" 
+echo "MODE:" 
+echo "init     init autotools (autoscan) (dev only)"
+echo "auto     run typical autotools (dev only)"
+echo "reconf   run autoreconf and stop (create a configure script)"
+echo "debug    run autoreconf and build with debugging flags"
+echo "single   run autoreconf and build with single precision (float)"
+echo "clean    remove all generated files"
+echo "doxygen  create documentation using doxygen" 
+echo "*        run autoreconf and build" 
+echo "" 
+echo "ARGS:" 
+echo "all args are passed to configure if configure is executed" 
+exit 0;
+}
+
+
 case $1 in
+--help|-h|help) shift; help $@;;
 init) shift; init $@;;
-fbuild) shift; fbuild $@;;
-dbuild) shift; dbuild $@;;
 auto) shift; autotools $@;;
-gen) shift; autogen $@;;
+reconf) shift; autogen $@;;
+debug) shift; debug $@;;
+single) shift; single $@;;
 clean) shift; clean $@;;
+doxygen) shift; doxygen $@;;
 *) default $@;;
 esac

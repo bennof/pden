@@ -18,7 +18,7 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
@@ -27,7 +27,7 @@
 
 
 //OPTIMIZER
-static real lineSearchArmijo(PDen_t *X[], real param0[], SFValueFunc_t func, real grad[], real val, size_t npar){
+static real lineSearchArmijo(const PDen_t *X[], real param0[], SFValueFunc_t func, real grad[], real val, const size_t npar){
 	real lambda = 2.;
 	size_t i, cc=0;
 	real eval,nval; //linear estimation value, new value
@@ -46,7 +46,7 @@ static real lineSearchArmijo(PDen_t *X[], real param0[], SFValueFunc_t func, rea
 
 		
 		eval = val - alpha * sqrt(eval);
-		nval = func(X,x1);// value at position
+		nval = func(X,(const real*)x1);// value at position
 
 		debug("Armijo rule[%3lu]: %lf<=%lf (lambda=%lf)",cc,nval,eval,lambda);
 		if(nval <= eval){ // success
@@ -60,14 +60,17 @@ static real lineSearchArmijo(PDen_t *X[], real param0[], SFValueFunc_t func, rea
 		}
 		cc++;
 	}
-	if(cc>=100)
-		info("Armijo rule line search not converged");
+	if(cc>=100) {
+		error("Armijo rule line search not converged (%lf<=%lf)(old %lf)",nval,eval,val);
+		return val;
+
+	}
 	return nval;
 }
 
 
 //Conjugated Gradients  
-int CGRefine (PDen_t *X[], real param0[], SFValueFunc_t func, SFGradFunc_t gradfunc, size_t npar, real prec, size_t steps)
+int CGRefine (const PDen_t *X[], real param0[], SFValueFunc_t func, SFGradFunc_t gradfunc, const size_t npar, const real prec, const size_t steps)
 {
 	size_t i;
 	size_t c = 0;         //loop counter
@@ -91,6 +94,9 @@ int CGRefine (PDen_t *X[], real param0[], SFValueFunc_t func, SFGradFunc_t gradf
 
 		//Armijo rule line search loop
                 nval = lineSearchArmijo(X,param0,func,grad,val,npar);
+		if (nval >= val || isnan(nval))
+			return 1;
+
 
 		debug("Test convergence: %lf ~= %lf (old/new)",val,nval);
 		if ( fabs(val-nval) < prec)

@@ -21,10 +21,18 @@
 #ifndef __MATHTOOLS_H
 #define __MATHTOOLS_H
 
+/**
+ * @file mathtools.h
+ * @author Benjamin Falkner
+ * @brief File containing useful math functions 
+ * @warning internal file - not installed
+ */
+
 #include "types.h"
 #include <math.h>
 
 #define TWO_PI 6.2831853071795864769252866
+#define PI     3.1415926535897932384626434
 
 static real isqrt_( real number )
 {
@@ -42,7 +50,7 @@ static real isqrt_( real number )
 	//i  = * ( long * ) &y;                      
 	y.l  = 0x5f3759df - ( y.l >> 1 );               
 	//y  = * ( float * ) &i;
-	y.r  = y.r * ( threehalfs - ( x2 * y.r * y.r ) );   
+	y.f  = y.f * ( threehalfs - ( x2 * y.f * y.f ) );   
 	return y.f;
 #else // double
 	double x2;

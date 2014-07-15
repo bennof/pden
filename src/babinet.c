@@ -18,54 +18,60 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
 #include "pden_sfrefine.h"
 
+
 //INTERNAL FUNCTIONS
 
 //Babinet Functions
-static real SFFunc_Babinet(real s2, real calc, real mask, real x0[])
+static real SFFunc_Babinet(const real s2, const real calc, const real mask, const real x0[])
 {
 	return x0[0]*exp(-x0[1] * s2/4) * (calc - mask * x0[2] * exp(-x0[3] * s2/4));
 }
 
-static real SFFunc_Babinet_dB_glob(real s2, real calc, real mask, real x0[])
+static real SFFunc_Babinet_dB_glob(const real s2, const real calc, const real mask, const real x0[])
 {
 	return (-s2/4) * x0[0]*exp(-x0[1] * s2/4) * (calc - mask * x0[2] * exp(-x0[3] * s2/4));
 }
 
-static real SFFunc_Babinet_dk_glob(real s2, real calc, real mask, real x0[])
+static real SFFunc_Babinet_dk_glob(const real s2, const real calc, const real mask, const real x0[])
 {
 	return exp(-x0[1] * s2/4) * (calc - mask * x0[2] * exp(-x0[3] * s2/4));
 }
 
-static real SFFunc_Babinet_dB_solv(real s2, real calc, real mask, real x0[])
+static real SFFunc_Babinet_dB_solv(const real s2, const real calc, const real mask, const real x0[])
 {
 	return (-s2/4) * x0[0]*exp(-x0[1] * s2/4) * -1. * mask * x0[0] * exp(-x0[3] * s2/4);
 }
 
-static real SFFunc_Babinet_dk_solv(real s2, real calc, real mask, real x0[])
+static real SFFunc_Babinet_dk_solv(const real s2, const real calc, const real mask, const real x0[])
 {
 	return x0[0]*exp(-x0[1] * s2/4) * -1. * mask * exp(-x0[3] * s2/4);
 }
 
 
 
-static real SFValueFunc_Babinet(PDen_t *X[], real param0[])
+static real SFValueFunc_Babinet(const PDen_t *X[], const real param0[])
 {
+
+	real val=0;
+	debug("get value Babinet:");
+
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp parallel reduction(+:val) 
+	#endif
+	{
 	size_t  k,j,i,p;
 	ssize_t u,v;
 	size_t  ni,nj,nk;
 	real Fm , Fc, Fr, s;
 	real modx,mody,modz;
-	real val,h;
-	cplx * res, * cal, *mas ;
-
-	debug("get value Babinet:");
-
+	real h;
+	const cplx * res, * cal, *mas ;
 	// calculate data dimensions
   	nk = X[0]->size.z;
   	nj = X[0]->size.y;
@@ -81,11 +87,15 @@ static real SFValueFunc_Babinet(PDen_t *X[], real param0[])
 	modz = 1./(modz*modz);
 
 	//scaling factor
-	res = (cplx *)X[0]->data;
-	cal = (cplx *)X[1]->data;
-	mas = (cplx *)X[2]->data;
+	res = (const cplx *)X[0]->data;
+	cal = (const cplx *)X[1]->data;
+	mas = (const cplx *)X[2]->data;
+
+	//debug("Pointer %lf %p %p",X[0]->data[56],X[1],X[2]);
 	
-	val = 0.0;
+	#ifdef __BABINET_C_OPENMP
+	#pragma omp for schedule(static)
+	#endif
 	//element loop
   	for(k=0;k<nk;k++){
   	  	for(j=0;j<nj;j++){
@@ -108,174 +118,137 @@ static real SFValueFunc_Babinet(PDen_t *X[], real param0[])
 					    
 				h = (SFFunc_Babinet(s, Fc, Fm,param0)-Fr);
 				val += h*h;
+
+				//debug("%lu: s=%lf Fc=%lf Fm=%lf Fr=%lf h=%lf \n",p,s,Fc,Fm,Fr,h);
 			}
 		}
 	}//end element loop	
-	debug("value = %lf",val/X[0]->n);
+	} //OMP PARALLEL END
+	debug("value = %lf(=%lf/%lu)",val/X[0]->n,val,X[0]->n);
 	return val/X[0]->n;
 }
 
-static void SFGradFunc_Babinet(PDen_t *X[], real param0[],real grad[])
+static void SFGradFunc_Babinet(const PDen_t *X[], const real param0[], real grad[])
 {
+	real S;
+
+	debug("get Gradient:");
+	grad[0]=0.;
+	grad[1]=0.;
+	grad[2]=0.;
+	grad[3]=0.;
+	
+
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp parallel 
+	#endif
+	{
 	size_t  k,j,i,p;
 	ssize_t u,v;
 	size_t  ni,nj,nk;
-	real Fm , Fc, Fr, s;
+	real Fm , Fc, Fr, s, h;
 	real modx,mody,modz;
-	cplx * res, * cal, *mas ;
+	const cplx * res, * cal, *mas ;
 
-	debug("get Gradient:");
+	real grad_[4]={0.,0.,0.,0.};
+
 	// calculate data dimensions
-  	nk = X[0]->size.z;
-  	nj = X[0]->size.y;
-  	ni = ( X[0]->size.x / 2 + 1 );
-
+	nk = X[0]->size.z;
+	nj = X[0]->size.y;
+	ni = ( X[0]->size.x / 2 + 1 );
+	
 	// fourier scaling factor
 	modx = X[0]->apix.x*X[0]->size.x;
 	mody = X[0]->apix.y*X[0]->size.y;
 	modz = X[0]->apix.z*X[0]->size.z;
-
+	
 	modx = 1./(modx*modx);
 	mody = 1./(mody*mody);
 	modz = 1./(modz*modz);
-
+	
 	//scaling factor
-	res = (cplx *) X[0]->data;
-	cal = (cplx *) X[1]->data;
-	mas = (cplx *) X[2]->data;
+	res = (const cplx *) X[0]->data;
+	cal = (const cplx *) X[1]->data;
+	mas = (const cplx *) X[2]->data;
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp for schedule(static)  
+	#endif
+	//element loop
+	for(k=0;k<nk;k++){
+	  	for(j=0;j<nj;j++){
+			for(i=0;i<ni;i++){
+				// array position
+				p = (k * nj + j) * ni + i;
 	
-	{ //Section 1: k_global
-		grad[0] = 0.0;
-		//element loop
-	  	for(k=0;k<nk;k++){
-	  	  	for(j=0;j<nj;j++){
-	      			for(i=0;i<ni;i++){
-					// array position
-					p = (k * nj + j) * ni + i;
+				//radius
+				u = dft_c(k,nk);
+				v = dft_c(j,nj);
 	
-	        			//radius
-	        			u = dft_c(k,nk);
-	        			v = dft_c(j,nj);
+				s = (real)(i*i)*(modx)
+				 	+(real)(v*v)*(mody)
+	 				+(real)(u*u)*(modz);
 	
-	        			s = (real)(i*i)*(modx)
-	        			 	+(real)(v*v)*(mody)
-	         				+(real)(u*u)*(modz);
-	
-					// Structure Factors
-					Fc = abscplx(cal[p]);
-					Fm = abscplx(mas[p]);
-					Fr = abscplx(res[p]);			    
-//					debug("Fr=%lf  Fc=%lf  Fm=%lf",Fr,Fc,Fm);
-					grad[0] += 2*(SFFunc_Babinet(s, Fc, Fm, param0)-Fr) * SFFunc_Babinet_dk_glob(s, Fc, Fm, param0);
-				}
+				// Structure Factors
+				Fc = abscplx(cal[p]);
+				Fm = abscplx(mas[p]);
+				Fr = abscplx(res[p]);			    
+				debug("Fr=%lf  Fc=%lf  Fm=%lf",Fr,Fc,Fm);
+				h = 2*(SFFunc_Babinet(s, Fc, Fm, param0)-Fr);
+				grad_[0] += h * SFFunc_Babinet_dk_glob(s, Fc, Fm, param0);
+				grad_[1] += h * SFFunc_Babinet_dB_glob(s, Fc, Fm, param0);
+				grad_[2] += h * SFFunc_Babinet_dk_solv(s, Fc, Fm, param0);
+				grad_[3] += h * SFFunc_Babinet_dB_solv(s, Fc, Fm, param0);
 			}
-		}//end element loop	
-	}
-	{ //Section 2: B_global
-		grad[1] = 0.0;
-		//element loop
-	  	for(k=0;k<nk;k++){
-	  	  	for(j=0;j<nj;j++){
-	      			for(i=0;i<ni;i++){
-					// array position
-					p = (k * nj + j) * ni + i;
-	
-	        			//radius
-	        			u = dft_c(k,nk);
-	        			v = dft_c(j,nj);
-	
-	        			s = (real)(i*i)*(modx)
-	        			 	+(real)(v*v)*(mody)
-	         				+(real)(u*u)*(modz);
-	
-					// Structure Factors
-					Fc = abscplx(cal[p]);
-					Fm = abscplx(mas[p]);
-					Fr = abscplx(res[p]);			    
-//					debug("Fr=%lf  Fc=%lf  Fm=%lf",Fr,Fc,Fm);
-					grad[1] += 2*(SFFunc_Babinet(s, Fc, Fm, param0)-Fr) * SFFunc_Babinet_dB_glob(s, Fc, Fm, param0);
-				}
-			}
-		}//end element loop	
-	}
-	{ //Section 3: k_solv
-		grad[2] = 0.0;
-		//element loop
-	  	for(k=0;k<nk;k++){
-	  	  	for(j=0;j<nj;j++){
-	      			for(i=0;i<ni;i++){
-					// array position
-					p = (k * nj + j) * ni + i;
-	
-	        			//radius
-	        			u = dft_c(k,nk);
-	        			v = dft_c(j,nj);
-	
-	        			s = (real)(i*i)*(modx)
-	        			 	+(real)(v*v)*(mody)
-	         				+(real)(u*u)*(modz);
-	
-					// Structure Factors
-					Fc = abscplx(cal[p]);
-					Fm = abscplx(mas[p]);
-					Fr = abscplx(res[p]);			    
-//					debug("Fr=%lf  Fc=%lf  Fm=%lf",Fr,Fc,Fm);
-					grad[2] += 2*(SFFunc_Babinet(s, Fc, Fm, param0)-Fr) * SFFunc_Babinet_dk_solv(s, Fc, Fm, param0);
-				}
-			}
-		}//end element loop	
-	}
+		}
+	}//end element loop	
 
-	{ //Section 4: B_solv
-		grad[3] = 0.0;
-		//element loop
-	  	for(k=0;k<nk;k++){
-	  	  	for(j=0;j<nj;j++){
-	      			for(i=0;i<ni;i++){
-					// array position
-					p = (k * nj + j) * ni + i;
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp atomic
+	#endif
+	grad[0]+=grad_[0];
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp atomic
+	#endif
+	grad[1]+=grad_[1];
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp atomic
+	#endif
+	grad[2]+=grad_[2];
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp atomic
+	#endif
+	grad[3]+=grad_[3];
 	
-	        			//radius
-	        			u = dft_c(k,nk);
-	        			v = dft_c(j,nj);
-	
-	        			s = (real)(i*i)*(modx)
-	        			 	+(real)(v*v)*(mody)
-	         				+(real)(u*u)*(modz);
-	
-					// Structure Factors
-					Fc = abscplx(cal[p]);
-					Fm = abscplx(mas[p]);
-					Fr = abscplx(res[p]);			    
-//					debug("Fr=%lf  Fc=%lf  Fm=%lf",Fr,Fc,Fm);
-					grad[3] += 2*(SFFunc_Babinet(s, Fc, Fm, param0)-Fr) * SFFunc_Babinet_dB_solv(s, Fc, Fm, param0);
-				}
-			}
-		}//end element loop	
-	}
+	} //OMP PARALLEL END
 
-	s = -1./(real) X[0]->n;
-	grad[0] *=s;
-	grad[1] *=s;
-	grad[2] *=s;
-	grad[3] *=s;
+
+	S = -1./(real) X[0]->n;
+	grad[0] *=S;
+	grad[1] *=S;
+	grad[2] *=S;
+	grad[3] *=S;
 	debug("grad(%9.4lf %9.4lf %9.4lf %9.4lf)",grad[0],grad[1],grad[2],grad[3]);
-	
 }
 
 //library functions
-PDen_t *  pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, real k_glob, real B_glob, real k_solv, real B_solv)
+PDen_t *  pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, const real k_glob, const real B_glob, const real k_solv, const real B_solv)
 {
+
+	pDenFFTNormal(input,1);
+	pDenFFTNormal(mask,1);
+
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp parallel 
+	#endif
+	{
 	size_t  k,j,i,p;
 	ssize_t u,v;
 	size_t  ni,nj,nk;
 	real Fm , Fc, s;
 	real modx,mody,modz;
-	cplx * tar, * inp , * mas;
+	const cplx  * inp , * mas;
+	 cplx * tar;
 	real x0[4];
-
-	pDenFFTNormal(input,1);
-	pDenFFTNormal(mask,1);
 
 	x0[0] = k_glob;
 	x0[1] = B_glob;
@@ -298,9 +271,12 @@ PDen_t *  pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, rea
 
 	//scaling factor
 	tar = (cplx *)result->data;
-	inp = (cplx *)input->data;
-	mas = (cplx *)mask->data;
+	inp = (const cplx *)input->data;
+	mas = (const cplx *)mask->data;
 
+	#ifdef __BABINET_C_OPENMP 
+	#pragma omp for schedule(static)  
+	#endif
   	for(k=0;k<nk;k++){
   	  	for(j=0;j<nj;j++){
       			for(i=0;i<ni;i++){
@@ -327,11 +303,12 @@ PDen_t *  pDenApplySF_Babinet (PDen_t * result, PDen_t *input, PDen_t *mask, rea
 			}
 		}
 	}
+	} //OMP PARALLEL END
 	result->mode |= PDEN_MODE_PHASE_SPACE;
 	return result;
 }
 
-int      pDenRefineSF_Babinet (PDen_t * model, PDen_t *calc, PDen_t *mask, real *k_glob, real * B_glob, real * k_solv, real * B_solv, real prec, size_t steps)
+int      pDenRefineSF_Babinet (PDen_t * model, PDen_t *calc, PDen_t *mask, real *k_glob, real * B_glob, real * k_solv, real * B_solv, const real prec, const size_t steps)
 {
 	int r;
 	real x0[4] = {
@@ -354,16 +331,23 @@ int      pDenRefineSF_Babinet (PDen_t * model, PDen_t *calc, PDen_t *mask, real 
 	if(*B_glob != 0. ) x0[1] = *B_glob;
 	if(*k_solv != 0. ) x0[2] = *k_solv;
 	if(*B_solv != 0. ) x0[3] = *B_solv;
+
+	info("Structure factor refinment:");
 	
 
 	say("Step      k_global  B_global  k_solvent B_solvent Value\n");
-	r = CGRefine(maps,x0,SFValueFunc_Babinet, SFGradFunc_Babinet,4, prec, steps);
+	r = CGRefine((const PDen_t **)maps,x0,SFValueFunc_Babinet, SFGradFunc_Babinet,4, prec, steps);
 
+	if(r)
+		error("Babinet stucture factor refinment failed with parameters: k_global=%lf  B_global=%lf  k_solvent=%lf B_solvent=%lf", x0[0],x0[1],x0[2],x0[3])
+	else 
+		info("Babinet: F_m=%.2lf*exp(-%.1lf*s^2/4)*(F_c-F_mask*%.2lf*exp(-%.1lf*s^2/4))", x0[0],x0[1],x0[2],x0[3]);
 
 	*k_glob = x0[0];
 	*B_glob = x0[1];
 	*k_solv = x0[2];
 	*B_solv = x0[3];
+
 
 	return r;
 }

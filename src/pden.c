@@ -18,7 +18,7 @@
  *  along with PDen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pden.h"
+#include "pden.in.h"
 #include "tools.h"
 #include "mathtools.h"
 
@@ -361,7 +361,9 @@ int pDenNormalize( PDen_t * this )
 {
 	real m,s;
 	pDenMeanSd( this, &m, &s);	
+	debug("Mean=%lf sd=%lf",m,s);
 	pDenNormalizeTo( this, m, s);
+	debug("Value: %lf\n",this->data[4]);
 	return 0;
 }
 

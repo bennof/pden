@@ -25,6 +25,7 @@
  * @file types.h
  * @author Benjamin Falkner
  * @brief File containing mathematical types to be used internally
+ * @warning internal file - not installed
  */
 
 
