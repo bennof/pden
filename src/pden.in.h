@@ -152,6 +152,11 @@ PDen_t * pDenDelete ( PDen_t * this );
   */
 real *   getData( PDen_t * this );
 
+
+
+
+
+
 // IO (mode is not used)
 /**
  * @brief print info to stream 
@@ -161,17 +166,27 @@ void     pDenPrint     (PDen_t * this, FILE * stream);
 /**
  * @brief read xplor file (mode=0) 
  */
-int      pDenReadXPLOR (PDen_t * this, const char * filename, int mode);
+int      pDenReadXPLOR (PDen_t * this, const char * filename, const int mode);
 
 /**
  * @brief read mrc file (mode=0)
  */
-int      pDenReadMRC   (PDen_t * this, const char * filename, int mode);
+int      pDenReadMRC   (PDen_t * this, const char * filename, const int mode);
 
 /**
  * @brief write mrcfile (mode=0)
  */
-int      pDenWriteMRC  (PDen_t * this, const char * filename, int mode);
+int      pDenWriteMRC  (PDen_t * this, const char * filename, const int mode);
+
+/**
+ * @brief write mrcfile (mode=0)
+ */
+int      pDenWriteXPLOR  (PDen_t * this, const char * filename, const int mode);
+
+
+
+
+
 
 //(something like) member functions
 
@@ -227,32 +242,32 @@ int  pDenMapCorrError(PDen_t * map1, PDen_t * map2, real *corr, real *e_corr, si
 /**
  * @brief add to maps
  */
-PDen_t * pDenAdd           (PDen_t * result, PDen_t * a, PDen_t * b );
+PDen_t * pDenAdd           (PDen_t * result, const PDen_t * a, const PDen_t * b );
 
 /**
  * @brief substract maps
  */
-PDen_t * pDenSub           (PDen_t * result, PDen_t * a, PDen_t * b );
+PDen_t * pDenSub           (PDen_t * result, const PDen_t * a, const PDen_t * b );
 
 /**
  * @brief multiply maps
  */
-PDen_t * pDenMult          (PDen_t * result, PDen_t * a, PDen_t * b );
+PDen_t * pDenMult          (PDen_t * result, const PDen_t * a, const PDen_t * b );
 
 /**
  * @brief devide maps
  */
-PDen_t * pDenDiv           (PDen_t * result, PDen_t * a, PDen_t * b );
+PDen_t * pDenDiv           (PDen_t * result, const PDen_t * a, const PDen_t * b );
 
 /**
  * @brief sqrt of a map
  */
-PDen_t * pDenSqrt          (PDen_t * result, PDen_t * a );
+PDen_t * pDenSqrt          (PDen_t * result, const PDen_t * a );
 
 /**
  * @brief inverse sqrt of a map (1/sqrt(x))
  */
-PDen_t * pDenISqrt         (PDen_t * result, PDen_t * a );
+PDen_t * pDenISqrt         (PDen_t * result, const PDen_t * a );
 
 
 //TODO: threshold / mask
@@ -260,22 +275,22 @@ PDen_t * pDenISqrt         (PDen_t * result, PDen_t * a );
 /**
  * @brief scale a map
  */
-PDen_t * pDenScale         (PDen_t * result, PDen_t * a, real s );
+PDen_t * pDenScale         (PDen_t * result, const PDen_t * a, const real s );
 
 /**
  * @brief add white/grey noise with sigma s to the density
  */
-PDen_t * pDenAddNoise      (PDen_t * result, PDen_t * a, real s );
+PDen_t * pDenAddNoise      (PDen_t * result, const PDen_t * a, const real s );
 
 /**
  * @brief add gaussian noise with sigma s to the density  
  */
-PDen_t * pDenAddGaussNoise (PDen_t * result, PDen_t * a, real s);
+PDen_t * pDenAddGaussNoise (PDen_t * result, const PDen_t * a, const real s);
 
 /**
  * @brief create a mask at a level threshold
  */
-PDen_t * pDenMkMask        (PDen_t * result, PDen_t * a, real level );
+PDen_t * pDenMkMask        (PDen_t * result, const PDen_t * a, const real level );
 
 //fft
 
@@ -283,12 +298,12 @@ PDen_t * pDenMkMask        (PDen_t * result, PDen_t * a, real level );
  * @brief perform fft with normalization only after backtransform
  * @deprecated this function is deprecated because of a calculation overhead 
  */
-int      pDenFFT(PDen_t * this,int direction); // do not combine with aother functions - use pDenFFTNormal
+int      pDenFFT(PDen_t * this,const int direction); // do not combine with aother functions - use pDenFFTNormal
 
 /**
  * @brief perform fft with normalization
  */
-int      pDenFFTNormal(PDen_t * this,int direction);
+int      pDenFFTNormal(PDen_t * this,const int direction);
 
 /**
  * @brief get the size of the split sets work/free 

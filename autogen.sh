@@ -16,7 +16,7 @@ autotools () {
 }
 
 autogen () {
-	autoreconf --force --install 
+	autoreconf --force --install || echo "autoreconf failed - try configure"
 }
 
 debug () {
@@ -32,7 +32,7 @@ single () {
 }
 
 default () {
-	autogen;
+	autoreconf --force --install || echo "autoreconf failed - try configure"
 	./configure $@
 	make
 }

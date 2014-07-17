@@ -5,9 +5,9 @@ AM_INIT_AUTOMAKE([0.3.03 foreign])
 AC_CONFIG_SRCDIR([src/pden.in.h])
 AC_CONFIG_HEADERS([src/config.h])
 
-AC_CONFIG_MACRO_DIRS([m4])
+AC_CONFIG_MACRO_DIR([m4])
 
-ACLOCAL="$ACLOCAL $ACLOCAL_FLAGS"
+#ACLOCAL="$ACLOCAL $ACLOCAL_FLAGS"
 
 
 # Checks for programs.

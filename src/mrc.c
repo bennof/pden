@@ -95,7 +95,7 @@ static void setMRCHeader(MRC_Header_t *header,size_t dim[], real apix[], real or
 
  
 
-int pDenReadMRC(PDen_t * this, const char * filename, int mode)
+int pDenReadMRC(PDen_t * this, const char * filename, const int mode)
 {
 	int fd;
 	MRC_Header_t head;
@@ -253,7 +253,7 @@ int pDenReadMRC(PDen_t * this, const char * filename, int mode)
 
 
 
-int pDenWriteMRC(PDen_t * this, const char * filename, int mode)
+int pDenWriteMRC(PDen_t * this, const char * filename, const int mode)
 {
 	int fd;
 	size_t size;

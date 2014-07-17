@@ -47,7 +47,7 @@ real gaussRand ()
 	return r2;
 }
 
-
+//function template
 #define binop( sign ) \
 {\
 	size_t i;\
@@ -57,6 +57,7 @@ real gaussRand ()
 }
 
 
+//function template
 #define singularfunc( func ) \
 {\
 	size_t i;\
@@ -67,34 +68,34 @@ real gaussRand ()
 
 
 
-PDen_t * pDenAdd (PDen_t * result, PDen_t * a, PDen_t * b )
+PDen_t * pDenAdd      (PDen_t * result, const PDen_t * a, const PDen_t * b )
 binop( + )
 
-PDen_t * pDenSub (PDen_t * result, PDen_t * a, PDen_t * b )
+PDen_t * pDenSub      (PDen_t * result, const PDen_t * a, const PDen_t * b )
 binop( - )
 
-PDen_t * pDenMult (PDen_t * result, PDen_t * a, PDen_t * b )
+PDen_t * pDenMult     (PDen_t * result, const PDen_t * a, const PDen_t * b )
 binop( * )
 
-PDen_t * pDenDiv (PDen_t * result, PDen_t * a, PDen_t * b )
+PDen_t * pDenDiv      (PDen_t * result, const PDen_t * a, const PDen_t * b )
 binop( / )
 
-PDen_t * pDenScale (PDen_t * result, PDen_t * a, real s )
+PDen_t * pDenScale    (PDen_t * result, const PDen_t * a, const real s )
 singularfunc( s * )
 
-PDen_t * pDenAddNoise (PDen_t * result, PDen_t * a, real s )
+PDen_t * pDenAddNoise (PDen_t * result, const PDen_t * a, const real s )
 singularfunc( s * (((real)rand()/((real)RAND_MAX)*2)-1.) + )
 
-PDen_t * pDenAddGaussNoise (PDen_t * result, PDen_t * a, real s )
+PDen_t * pDenAddGaussNoise (PDen_t * result, const PDen_t * a, const real s )
 singularfunc( s *  gaussRand() + ) 
 
-PDen_t * pDenSqrt (PDen_t * result, PDen_t * a )
+PDen_t * pDenSqrt (PDen_t * result, const PDen_t * a )
 singularfunc( sqrt )
 
-PDen_t * pDenISqrt (PDen_t * result, PDen_t * a )
+PDen_t * pDenISqrt (PDen_t * result, const PDen_t * a )
 singularfunc( isqrt_ )
 
-PDen_t * pDenMkMask (PDen_t * result, PDen_t * a, real level )
+PDen_t * pDenMkMask (PDen_t * result, const PDen_t * a, const real level )
 {
 	size_t i;
 	for(i=0;i<result->n;i++)
