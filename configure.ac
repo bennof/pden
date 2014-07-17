@@ -1,7 +1,7 @@
 
 AC_PREREQ([2.68])
-AC_INIT([PDEN], [0.3], [pden@benjaminfalkner.de])
-AM_INIT_AUTOMAKE([0.3 foreign])
+AC_INIT([PDEN], [0.3.03], [pden@benjaminfalkner.de])
+AM_INIT_AUTOMAKE([0.3.03 foreign])
 AC_CONFIG_SRCDIR([src/pden.in.h])
 AC_CONFIG_HEADERS([src/config.h])
 
