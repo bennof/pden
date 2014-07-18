@@ -15,18 +15,19 @@ autotools () {
 	autoconf
 }
 
-autogen () {
+release () {
+	clean
 	autoreconf --force --install || echo "autoreconf failed - try configure"
 }
 
 debug () {
-	autogen;
+	autoreconf --force --install || echo "autoreconf failed - try configure"
 	./configure  --enable-debug $@
 	make
 }
 
 single () {
-	autogen;
+	autoreconf --force --install || echo "autoreconf failed - try configure"
 	./configure --enable-single $@
 	make
 }
@@ -58,7 +59,7 @@ EOF
 
 
 clean () {
-	make clean
+	make clean || echo "Not configured"
 	rm -rf config.log config.status configure depcomp missing install-sh autom4te.cache compile Makefile.in aclocal.m4 Makefile src/Makefile src/Makefile.in src/stamp-h1 src/config.h src/config.h.in src/config.h.in~ src/.deps 
 	rm -rf doc doxygen.conf
 
@@ -76,6 +77,7 @@ echo "auto     run typical autotools (dev only)"
 echo "reconf   run autoreconf and stop (create a configure script)"
 echo "debug    run autoreconf and build with debugging flags"
 echo "single   run autoreconf and build with single precision (float)"
+echo "release  create a release candidate"
 echo "clean    remove all generated files"
 echo "doxygen  create documentation using doxygen" 
 echo "*        run autoreconf and build" 
@@ -94,6 +96,7 @@ reconf) shift; autogen $@;;
 debug) shift; debug $@;;
 single) shift; single $@;;
 clean) shift; clean $@;;
+release) shift; release $@;;
 doxygen) shift; doxygen $@;;
 *) default $@;;
 esac

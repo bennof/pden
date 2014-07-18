@@ -1,5 +1,4 @@
 # Global Variables
-ACLOCAL_AMFLAGS     =
 
 AM_CFLAGS           = @DEFAULT_CFLAGS@
 AM_CFLAGS          += $(OPENMP_CFLAGS) 
