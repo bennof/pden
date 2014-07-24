@@ -23,7 +23,7 @@
 #include "mathtools.h"
 
 
-int pDenCalcPS(PDen_t * input,real *data, size_t n)
+int pDenCalcSF(PDen_t * input,real *data, size_t n)
 {
 	size_t  k,j,i, idx, *nc; 
 	ssize_t u,v;

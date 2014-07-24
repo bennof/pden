@@ -54,7 +54,7 @@ AM_CFLAGS          += -DDOUBLE=double -Dreal=double
 
 # Build library
 lib_LIBRARIES       = libpden.a
-libpden_a_SOURCES   = babinet.c fft.c gradient.c pden.c calc.c mrc.c xplor.c powerspectra.c render.c sfrefine.c split2fft.c io.c
+libpden_a_SOURCES   = babinet.c fft.c gradient.c pden.c calc.c mrc.c xplor.c structurefactor.c render.c sfrefine.c split2fft.c io.c
 
 #Lib
 LDADD               = libpden.a -lfftw3
@@ -74,13 +74,13 @@ pdenf.h: pden.in.h
 
 
 # Build binaries
-bin_PROGRAMS        = pdcalcps pdapplysf pdnormalize pdrefinesf pdcorr
+bin_PROGRAMS        = pdcalcsf pdapplysf pdnormalize pdrefinesf pdcorr
 pdcorr_SOURCES      = pdcorr.c
 pdcorr_CFLAGS       = -DVERBOSE $(AM_CFLAGS)
 pdapplysf_SOURCES   = pdapplysf.c
 pdapplysf_CFLAGS    = -DVERBOSE $(AM_CFLAGS)
-pdcalcps_SOURCES    = pdcalcps.c
-pdcalcps_CFLAGS     = -DVERBOSE $(AM_CFLAGS)
+pdcalcsf_SOURCES    = pdcalcsf.c
+pdcalcsf_CFLAGS     = -DVERBOSE $(AM_CFLAGS)
 pdnormalize_SOURCES = pdnormalize.c
 pdnormalize_CFLAGS  = -DVERBOSE $(AM_CFLAGS)
 pdrefinesf_SOURCES  = pdrefinesf.c

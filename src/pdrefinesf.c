@@ -32,7 +32,7 @@ const char help[] =
 " -c  <file>       calculated density file (mrc/xplor)\n"
 " -m  <file>       mask density file (mrc/xplor) (default: calculated density file)\n"
 " -o  <file>       output density file (mrc/xplor)\n"
-" -ps              powerspectrum output file (plain)\n"
+" -sf              structure factor output file (plain)\n"
 " -kg <float>      set global constant scaling factor (default: 1.)\n"
 " -Bg <float>      set global B-factor (default: 3.0)\n"
 " -ks <float>      set solvent constant scaling factor (default: 0.35 )\n"
@@ -71,7 +71,7 @@ int main(int argc, char * argv[] )
 	  argstring(calcname,"-c")
 	  argstring(maskname,"-m")
 	  argstring(outname,"-o")
-	  argstring(psname,"-ps")
+	  argstring(psname,"-sf")
 	  argfloat(kg,"-kg")
 	  argfloat(Bg,"-Bg")
 	  argfloat(ks,"-ks")
@@ -131,7 +131,7 @@ int main(int argc, char * argv[] )
 		n=calc->size.x/2;
 		if(!(ps = malloc(n*sizeof(real))))
 			die("Malloc failed");
-		pDenCalcPS(calc,ps,n);
+		pDenCalcSF(calc,ps,n);
 		OUTPUTFILE(fp,psname);
 		fprintf(fp,"# PDen " __PDEN_VERSION__  " (" __DATE__ " -  " __TIME__")\n");	
 		fprintf(fp,"# PDen Power Spectrum\n");

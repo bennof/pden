@@ -67,7 +67,7 @@ additional tools available.
 
     pdnormalize      normalize a density map to mu=0.0 and sigma=1.0
 
-    pdcalcps         calculate the power spectrum of a density (radial 
+    pdcalcsf         calculate the structur factor of a density (radial 
                      structure factor)
 
     pdapplysf        apply a structure factor correcting function (today only

@@ -398,9 +398,9 @@ PDen_t * pDenRampFilter(PDen_t * result, PDen_t * a,real sigma);
 
 
 /**
- * @brief calculate the power spectrum 
+ * @brief calculate radial stucture factor distribution
  */
-int      pDenCalcPS(PDen_t * input,real *data, size_t n);
+int      pDenCalcSF(PDen_t * input,real *data, size_t n);
 
 //Render
 PDen_t * pDenRenderPeng2(PDen_t * result, real width, real sigma, size_t n, int * type, real * coords, real * cfactor, real *dfactor);//depreated

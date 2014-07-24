@@ -24,8 +24,8 @@
 
 const char help[] = 
 "HELP: \n"
-"PDCalcPS: calculate power spectra of a density maps\n\n"
-"Usage: pdcalcps <args> input\n\n"
+"PDCalcSF: calculate radial structure factor of a density maps\n\n"
+"Usage: pdcalcpsf <args> input\n\n"
 "Arguments:\n"
 " -o               output file (plain)\n"
 " -n <int>         number of intervals (default: grid size )\n"
@@ -77,7 +77,7 @@ int main(int argc, char * argv[] )
 	if(!(ps = malloc(n*sizeof(real))))
 		die("Malloc failed");
 	
-	pDenCalcPS(map,ps,n);
+	pDenCalcSF(map,ps,n);
 
 	OUTPUTFILE(fp,output);
 	fprintf(fp,"# PDen " __PDEN_VERSION__  " (" __DATE__ " -  " __TIME__")\n");	
