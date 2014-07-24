@@ -88,45 +88,22 @@ fprintf(stdout," [%s:%i]\n",__FILE__,__LINE__);\
 #define readMap(to,name) \
 {\
 	info("read: %s",name);\
-	if(strstr(name,".mrc")){\
-		if(pDenReadMRC(to,name,0))\
-			die("failed to read: %s",name);\
-	}\
-	else if(strstr(name,".xplor")){\
-		if(pDenReadXPLOR(to,name,0))\
-			 die("failed to read: %s",name);\
-	}\
-	else {\
-		die("Unknown file format: %s (use mrc/xplor)",name);\
-	}\
+	if(pDenRead(to,name,0))\
+		die("failed to read: %s",name);\
 }
 
 #define readMapO(to,name) \
 {\
 	info("read: %s",name);\
-	if(strstr(name,".mrc")){\
-		if(pDenReadMRC(to,name,0))\
-			die("failed to read: %s",name);\
-	}\
-	else if(strstr(name,".xplor")){\
-		if(pDenReadXPLOR(to,name,0))\
-			 die("failed to read: %s",name);\
-	}\
-	else {\
-		error("Unknown file format: %s (use mrc/xplor)",name);\
-	}\
+	if(pDenRead(to,name,0))\
+		die("failed to read: %s",name);\
 }
 
 #define writeMap(to,name) \
 {\
 	info("write: %s",name);\
-	if(strstr(name,".mrc")){\
-		if(pDenWriteMRC(to,name,0))\
-			die("failed to write: %s",name);\
-	}\
-	else {\
-		error("Unknown file format: %s (use mrc only)",name);\
-	}\
+	if(pDenWrite(to,name,0))\
+		die("failed to write: %s",name);\
 }
 
 //OPENFILE
@@ -198,16 +175,4 @@ puts(help);\
 exit(0);\
 }\
 
-
-
-
-///OPENMP
-
-#ifdef _OPENMP
-#define __BABINET_C_OPENMP
-#define __GRADIENT_C_OPENMP
-#define __FFT_C_OPENMP
 #endif
-
-#endif //ENDHEADER
-

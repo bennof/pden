@@ -2,17 +2,17 @@ PDEN TODO LIST:
 ================================================================================
 
 Open Tasks: 
-- openMP support has to be inserted, tested and evaluated (develpoment)
-- unifying commands (some are still wrong) (in progress)
+- XPLOR output (testing) 
+- unifying commands (in progress)
 - add data descriptors like "const" (in progress)
 - cache coherence and false sharing tests (development)
+- openMP support has to be inserted, tested and evaluated (develpoment)
 - implementation of fourier slice theorem to generate images or reconstruct 
   from images
 - cryo-EM based structure factor correction 
 - beadmodel generation from density maps
 - parallel rendering pipeline
 - optional trajectoty support 
-- XPLOR output 
 - enable CCP4 IO using MRC
 - more fourier space methods to reduce needed fourier transforms 
 - write a real documentation

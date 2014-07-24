@@ -134,6 +134,12 @@ $ echo "PATH=/usr/local/bin:$PATH export PATH" >> ~/.bash_profile
 
 KNOWN BUGS:
 
+- compiling fails with "WARNING: 'aclocal-1.14' is missing on your system."!
+Known problem with GNU autotools.
+	SOLUTION:
+	$ touch configure.ac aclocal.m4 configure Makefile.am Makefile.in
+
+
 - compiling on linux with gcc version 4.6.3 (Ubuntu/Linaro 4.6.3-1ubuntu5) 
 could causes problems during sfrefinement:
 		"Armijo rule line search not converged"

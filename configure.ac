@@ -86,6 +86,15 @@ AX_CHECK_COMPILE_FLAG([-funsafe-math-optimizations ], [OPT_CFLAGS="$OPT_CFLAGS -
 AC_SUBST(OPT_CFLAGS)
 
 
+# Parallel
+AC_ARG_ENABLE([parallel],[  --enable-parallel          turn on paralel functions],
+	[case "${enableval}" in
+  		yes) parallel=true ;;
+    		no)  parallel=false ;;
+      		*) AC_MSG_ERROR([bad value ${enableval} for --enable-parallel]) ;;
+      	esac],[parallel=false])
+AM_CONDITIONAL([PARALLEL], [test "x$parallel" = xtrue])
+
 # Debug
 AC_ARG_ENABLE([debug],[  --enable-debug          turn on debugging],
 	[case "${enableval}" in

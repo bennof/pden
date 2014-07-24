@@ -18,6 +18,16 @@ if VERBOSE
 AM_CFLAGS          += -DVERBOSE
 endif
 
+# Which functions/groups should be parallel
+if PARALLEL
+AM_CFLAGS          += -D__BABINET_C_OPENMP
+AM_CFLAGS          += -D__GRADIENT_C_OPENMP
+AM_CFLAGS          += -D__FFT_C_OPENMP
+endif
+
+
+
+
 # Precision
 if SINGLE
 
@@ -44,7 +54,7 @@ AM_CFLAGS          += -DDOUBLE=double -Dreal=double
 
 # Build library
 lib_LIBRARIES       = libpden.a
-libpden_a_SOURCES   = babinet.c fft.c gradient.c pden.c calc.c mrc.c xplor.c powerspectra.c render.c sfrefine.c split2fft.c
+libpden_a_SOURCES   = babinet.c fft.c gradient.c pden.c calc.c mrc.c xplor.c powerspectra.c render.c sfrefine.c split2fft.c io.c
 
 #Lib
 LDADD               = libpden.a -lfftw3
@@ -64,7 +74,9 @@ pdenf.h: pden.in.h
 
 
 # Build binaries
-bin_PROGRAMS        = pdcalcps pdapplysf pdnormalize pdrefinesf
+bin_PROGRAMS        = pdcalcps pdapplysf pdnormalize pdrefinesf pdcorr
+pdcorr_SOURCES      = pdcorr.c
+pdcorr_CFLAGS       = -DVERBOSE $(AM_CFLAGS)
 pdapplysf_SOURCES   = pdapplysf.c
 pdapplysf_CFLAGS    = -DVERBOSE $(AM_CFLAGS)
 pdcalcps_SOURCES    = pdcalcps.c

@@ -164,22 +164,60 @@ real *   getData( PDen_t * this );
 void     pDenPrint     (PDen_t * this, FILE * stream);
 
 /**
+ * @brief read density file (mode=0) 
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
+ */
+int      pDenRead (PDen_t * this, const char * filename, const int mode);
+
+
+/**
+ * @brief write density file (mode=0) 
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
+ */
+int      pDenWrite (PDen_t * this, const char * filename, const int mode);
+
+
+
+
+/**
  * @brief read xplor file (mode=0) 
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
  */
 int      pDenReadXPLOR (PDen_t * this, const char * filename, const int mode);
 
 /**
  * @brief read mrc file (mode=0)
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
  */
 int      pDenReadMRC   (PDen_t * this, const char * filename, const int mode);
 
 /**
  * @brief write mrcfile (mode=0)
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
  */
 int      pDenWriteMRC  (PDen_t * this, const char * filename, const int mode);
 
 /**
  * @brief write mrcfile (mode=0)
+ * @param this density object to store densityinformation
+ * @param filename file name of the file
+ * @param mode mode selector (not used - reserved for memory mapping) 
+ * @return 0 on success or an errorcode 
  */
 int      pDenWriteXPLOR  (PDen_t * this, const char * filename, const int mode);
 
